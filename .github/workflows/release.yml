@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+  build-release:
+    name: Build Release for ${{ matrix.os }}
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-linux
+            artifact_name: merger
+            asset_name: merger-linux-x86_64
+          - os: ubuntu-latest
+            target: aarch64-linux
+            artifact_name: merger
+            asset_name: merger-linux-aarch64
+          - os: windows-latest
+            target: x86_64-windows
+            artifact_name: merger.exe
+            asset_name: merger-windows-x86_64.exe
+          - os: macos-latest
+            target: x86_64-macos
+            artifact_name: merger
+            asset_name: merger-macos-x86_64
+          - os: macos-latest
+            target: aarch64-macos
+            artifact_name: merger
+            asset_name: merger-macos-aarch64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.14.1
+
+    - name: Build for target
+      run: |
+        zig build -Doptimize=ReleaseSafe -Dtarget=${{ matrix.target }}
+
+    - name: Copy binary (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        cp zig-out/bin/${{ matrix.artifact_name }} ${{ matrix.asset_name }}
+
+    - name: Copy binary (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        copy zig-out\bin\${{ matrix.artifact_name }} ${{ matrix.asset_name }}
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ${{ matrix.asset_name }}
+        asset_name: ${{ matrix.asset_name }}
+        asset_content_type: application/octet-stream
