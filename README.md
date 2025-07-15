@@ -1,7 +1,6 @@
 # 文件分卷合并工具
 
-[![Build Status](https://github.com/你的用户名/merger/workflows/Build%20Cross-Platform/badge.svg)](https://github.com/你的用户名/merger/actions)
-[![Release](https://github.com/你的用户名/merger/workflows/Release/badge.svg)](https://github.com/你的用户名/merger/releases)
+[![Build Cross-Platform](https://github.com/diy-x/merger/actions/workflows/build.yml/badge.svg)](https://github.com/diy-x/merger/actions/workflows/build.yml)
 
 一个用 Zig 语言编写的文件分卷合并工具，用于合并由 `split` 命令生成的分卷文件。
 
